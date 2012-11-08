@@ -440,7 +440,6 @@ class AnkingEditor(object):
 
     def bridge(self, str):
         if not self.note or not runHook:
-            print "shutdown"
             # shutdown
             return
         # focus lost or key/button pressed?

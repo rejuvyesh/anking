@@ -9,11 +9,10 @@ import subprocess
 from mock import MagicMock
 
 if __name__ == "__main__":
-    # FIXME turn into command line argument
-    path = "/home/amon/local/src/out/anki/"
-    # set up paths for local development
-    sys.path.insert(0, path+"libanki")
-    sys.path.insert(0, path+"qt")
+    # use local anki libs
+    base = os.path.dirname(os.path.realpath(__file__))
+    sys.path.insert(0, os.path.join(base, "libanki"))
+    sys.path.insert(0, os.path.join(base, "ankiqt"))
 
     # load anki libs
     import anki

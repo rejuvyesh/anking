@@ -1,0 +1,6 @@
+[submodule "libanki"]
+	path = libanki
+	url = https://github.com/dae/libanki
+[submodule "ankiqt"]
+	path = ankiqt
+	url = https://github.com/dae/ankiqt
