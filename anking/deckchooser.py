@@ -34,16 +34,13 @@ class DeckChooser(QHBoxLayout):
         self.addWidget(self.deck)
         self.connect(self.deck, SIGNAL("clicked()"), self.onDeckChange)
         # starting label
-        if self.mw.col.conf.get("addToCur", True):
-            col = self.mw.col
-            did = col.conf['curDeck']
-            if col.decks.isDyn(did):
-                did = 1
-            self.deck.setText(self.mw.col.decks.nameOrNone(
-                did) or _("Default"))
-        else:
-            self.deck.setText(self.mw.col.decks.nameOrNone(
-                self.mw.col.models.current()['did']) or _("Default"))
+        # if self.mw.col.conf.get("addToCur", True):
+        col = self.mw.col
+        did = 1 # col.conf['curDeck']
+        if col.decks.isDyn(did):
+            did = 1
+        self.deck.setText(self.mw.col.decks.nameOrNone(
+            did) or _("Default"))
         # layout
         sizePolicy = QSizePolicy(
             QSizePolicy.Policy(7),
