@@ -4,6 +4,7 @@
 # License: GNU GPL 3 <http://www.gnu.org/copyleft/gpl.html>
 
 import os, re, sys, __builtin__, time
+import optparse
 import subprocess
 
 from mock import MagicMock
@@ -26,10 +27,31 @@ if __name__ == "__main__":
     # load local libs
     import anking.addcards
 
+    # options
+    parser = optparse.OptionParser()
+    parser.usage = "%prog [OPTIONS]"
+    parser.add_option("-b", "--base", help="path to base folder")
+    parser.add_option("-p", "--profile", help="profile name to load")
+    opts, args = parser.parse_args(sys.argv[1:])
+    opts.base = unicode(opts.base or "", sys.getfilesystemencoding())
+    opts.profile = unicode(opts.profile or "", sys.getfilesystemencoding())
+
+    # profile manager
+    from aqt.profiles import ProfileManager
+    pm = ProfileManager(opts.base, opts.profile)
+    pm.ensureProfile()
+    if not pm.name:
+        # if there's a single profile, load it automatically
+        profs = pm.profiles()
+        try:
+            pm.load(profs[0])
+        except:
+            # password protected
+            pass
+
     # load anki collection for more convenient reads
-    # FIXME read from profile
     cwd = os.getcwd()
-    col = anki.storage.Collection("/home/amon/spoiler/anki/muflax/collection.anki2", lock=False)
+    col = anki.storage.Collection(pm.collectionPath(), lock=False)
     # os.chdir(cwd) # go back to old path, not *.media
 
     # check if anki is already running and if not, start it
