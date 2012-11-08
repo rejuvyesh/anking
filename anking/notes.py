@@ -16,15 +16,15 @@ class Note(object):
     def dupeOrEmpty(self):
         val = self.fields[0]
         if not val.strip():
-            return True
+            return 1
         # find any matching csums and compare
         csum = fieldChecksum(val)
         mid = self.model["id"]
         for flds in self.col.db.list(
             "select flds from notes where csum = ? and id != ? and mid = ?",
             csum, 0, mid):
-            if splitFields(flds)[0] == note["fields"][0]:
-                return True
+            if splitFields(flds)[0] == self.fields[0]:
+                return 2
         return False
 
     def items(self):

@@ -260,7 +260,6 @@ document.onclick = function (evt) {
 
 </script></head><body>
 <div id="fields"></div>
-<div id="dupes"><a href="#" onclick="py.run('dupes');return false;">%s</a></div>
 </body></html>
 """
 
@@ -505,7 +504,7 @@ class AnkingEditor(object):
         for f in self.note.fields:
             cols.append("#fff")
         err = self.note.dupeOrEmpty()
-        if err:
+        if err == 2:
             cols[0] = "#fcc"
             self.web.eval("showDupes();")
         else:
@@ -534,9 +533,8 @@ class AnkingEditor(object):
         self.currentField = 0
         # change timer
         if self.note:
-            self.web.setHtml(_html % (
-                getBase(self.mw.col), anki.js.jquery,
-                _("Show Duplicates")), loadCB=self._loadFinished)
+            self.web.setHtml(_html % (getBase(self.mw.col), anki.js.jquery),
+                             loadCB=self._loadFinished)
             self.updateTags()
         else:
             self.hideCompleters()
