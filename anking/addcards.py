@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Copyright muflax <mail@muflax.com>, 2012
+# License: GNU GPL 3 <http://www.gnu.org/copyleft/gpl.html>
+
+from aqt.qt import *
+from anki.errors import *
+from anki.hooks import addHook, remHook, runHook
+from anki.sound import clearAudioQueue
+from anki.utils import stripHTML
+from anki.utils import stripHTMLMedia
+from aqt.utils import showWarning, askUser, shortcut, tooltip
+
+from mock import Mock
+
+import anking.add_form
+import anking.deckchooser
+import anking.editor
+import anking.modelchooser
+import anking.network
+import anking.notes
+
+class AddCards(QDialog):
+    def __init__(self, mw):
+        QDialog.__init__(self, None, Qt.Window)
+        self.mw = mw
+        self.form = anking.add_form.Ui_Dialog()
+        self.form.setupUi(self)
+        self.setWindowTitle("Anking Off")
+        self.setMinimumHeight(300)
+        self.setMinimumWidth(400)
+        self.setupChoosers()
+        self.setupEditor()
+        self.setupButtons()
+        self.onReset()
+        # self.history = []
+        self.forceClose = False
+        # restoreGeom(self, "add")
+        addHook('reset', self.onReset)
+        addHook('currentModelChanged', self.onReset)
+        self.show()
+        self.setupNewNote()
+
+    def setupEditor(self):
+        self.editor = anking.editor.AnkingEditor(
+            self.mw, self.form.fieldsArea, self)
+
+    def setupChoosers(self):
+        self.modelChooser = anking.modelchooser.ModelChooser(
+            self.mw, self.form.modelArea)
+        self.deckChooser = anking.deckchooser.DeckChooser(
+            self.mw, self.form.deckArea)
+
+    def setupButtons(self):
+        bb = self.form.buttonBox
+        ar = QDialogButtonBox.ActionRole
+
+        # add
+        self.addButton = bb.addButton("Add", ar)
+        self.addButton.setShortcut(QKeySequence("Ctrl+Return"))
+        self.addButton.setToolTip(shortcut("Add (shortcut: ctrl+enter)"))
+        self.connect(self.addButton, SIGNAL("clicked()"), self.addCards)
+
+        # close
+        self.closeButton = QPushButton("Close")
+        self.closeButton.setAutoDefault(False)
+        bb.addButton(self.closeButton, QDialogButtonBox.RejectRole)
+
+    def setupNewNote(self):
+        note = anking.notes.Note(self.mw.col, self.modelChooser.currentModel)
+        self.editor.setNote(note)
+        return note
+
+    def onReset(self):
+        oldNote = self.editor.note
+        note = self.setupNewNote()
+        # flds = note.model()['flds']
+        # copy fields from old note
+        # if oldNote:
+        #     for n in range(len(note.fields)):
+        #         try:
+        #             if not keep or flds[n]['sticky']:
+        #                 note.fields[n] = oldNote.fields[n]
+        #             else:
+        #                 note.fields[n] = ""
+        #         except IndexError:
+        #             break
+        self.editor.currentField = 0
+        self.editor.setNote(note)
+
+    def addNote(self, note):
+        data = {
+            "model": note.model["name"],
+            "deck": note.deck,
+            "fields": note.fields,
+            "tags": note.tags,
+        }
+        if note.dupeOrEmpty():
+            # TODO better warning etc.
+            raise Exception("invalid note")
+        anking.network.sendToAnki("addNote", data)
+        self.mw.reset()    
+
+    def addCards(self):
+        self.editor.saveNow()
+        
+        # grab data, add note
+        note = self.editor.note
+        self.addNote(note)
+        
+        # stop anything playing
+        clearAudioQueue()
+        self.onReset()
+        # self.mw.col.autosave()
+
+    def keyPressEvent(self, evt):
+        "Show answer on RET or register answer."
+        if (evt.key() in (Qt.Key_Enter, Qt.Key_Return)
+            and self.editor.tags.hasFocus()):
+            evt.accept()
+            return
+        return QDialog.keyPressEvent(self, evt)
+
+    def reject(self):
+        remHook('reset', self.onReset)
+        remHook('currentModelChanged', self.onReset)
+        clearAudioQueue()
+        self.editor.setNote(None)
+        self.modelChooser.cleanup()
+        self.deckChooser.cleanup()
+        self.mw.reset()
+        # saveGeom(self, "add")
+        QDialog.reject(self)

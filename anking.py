@@ -4,31 +4,10 @@
 # License: GNU GPL 3 <http://www.gnu.org/copyleft/gpl.html>
 
 import os, re, sys, __builtin__, time
-import socket
-import json
+import subprocess
+
 from mock import MagicMock
 
-    # send card to anki
-TCP_IP = '127.0.0.1'
-TCP_PORT = 49666
-BUFFER_SIZE = 1024
-
-def sendToAnki(cmd, data):
-    while True:
-        try:
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((TCP_IP, TCP_PORT))
-            msg = {
-                "cmd": cmd,
-                "data": data,
-            }
-            s.send(json.dumps(msg))
-            s.close()
-            return
-        except:
-            time.sleep(1)
-        
-        
 if __name__ == "__main__":
     # FIXME turn into command line argument
     path = "/home/amon/local/src/out/anki/"
@@ -38,11 +17,15 @@ if __name__ == "__main__":
 
     # load anki libs
     import anki
+    from anki.hooks import runHook
     from aqt.qt import *
     from aqt import AnkiApp
+
+    # fake gettext because fuck it
+    __builtin__.__dict__['_'] = lambda s: s
     
     # load local libs
-    import anking_addcards
+    import anking.addcards
 
     # load anki collection for more convenient reads
     # FIXME read from profile
@@ -50,21 +33,24 @@ if __name__ == "__main__":
     col = anki.storage.Collection("/home/amon/spoiler/anki/muflax/collection.anki2", lock=False)
     # os.chdir(cwd) # go back to old path, not *.media
 
-    # fake objects for anki parts so we can just steal its code
-    mw = MagicMock()
-    mw.col = col
-    __builtin__.__dict__['_'] = lambda s: s
-    
     # check if anki is already running and if not, start it
     anki_app = AnkiApp(sys.argv)
     if not anki_app.alreadyRunning:
         print "starting anki..."
-        os.system("anki &")
+        subprocess.Popen("anki")
 
-    # send message to anki server
-    sendToAnki("addNotes", {"answer": 42})
-        
+    # our app
+    app = QApplication(sys.argv)
+
+    # fake objects for anki parts so we can just steal its code
+    mw = MagicMock()
+    mw.col = col
+    mw.app = app
+    def reset():
+        # replaces mw.reset()
+        runHook("reset")
+    mw.reset = reset
+
     # start app
-    # app = QApplication(sys.argv)
-    # form = anking_addcards.AddCards(mw)
-    # app.exec_()
+    form = anking.addcards.AddCards(mw)
+    app.exec_()
