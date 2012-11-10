@@ -6,5 +6,5 @@ Installation:
 
 1. git submodule init
 2. git submodule update
-3. ./update.sh
+3. ./build.sh
 4. Put anking.py on a shortcut in your WM somewhere.

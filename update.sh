@@ -8,10 +8,4 @@ cd ..
 
 cd ankiqt
 git pull
-./tools/build_ui.sh
 cd ..
-
-cd anking
-for form in *.ui; do
-  pyuic4 $form -o ${form:r}.py
-done
