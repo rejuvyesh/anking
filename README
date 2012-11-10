@@ -1,0 +1,10 @@
+Better card adding UI for Anki 2. See <http://daily.muflax.com/log/105/> for a rough description and feature list.
+
+Requires the TCP server addon at <https://github.com/muflax/anki-server>.
+
+Installation:
+
+1. git submodule init
+2. git submodule update
+3. ./update.sh
+4. Put anking.py on a shortcut in your WM somewhere.
