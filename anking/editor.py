@@ -4,7 +4,7 @@
 # License: GNU GPL 3 <http://www.gnu.org/copyleft/gpl.html>
 
 from aqt.qt import *
-import re, os, sys, urllib2, ctypes, traceback
+import re, os, sys, urllib2, ctypes, traceback, subprocess
 from anki.utils import stripHTML, namedtmp, json
 from anki.sound import play
 from anki.hooks import addHook, remHook, runHook, runFilter
@@ -447,6 +447,9 @@ class AnkingEditor(object):
         # media
         b("mail-attachment", self.onAddMedia, _("F3"),
           _("Attach pictures/audio/video (F3)"))
+        but = b("selection", self.onImageSelection, _("Ctrl+O"),
+          _("Insert image selection (Ctrl+O)"), text="Sel.")
+        but.setFixedWidth(24)
 
         # latex
         but = b("latex", self.insertLatex, _("Ctrl+L"),
@@ -779,6 +782,11 @@ class AnkingEditor(object):
     # Audio/video/images
     ######################################################################
 
+    def onImageSelection(self):
+        path = subprocess.check_output("selection").strip()
+        if path:
+            self.addMedia(path)
+        
     def onAddMedia(self):
         key = (_("Media") +
                " (*.jpg *.png *.gif *.tiff *.svg *.tif *.jpeg "+
