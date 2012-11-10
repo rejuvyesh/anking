@@ -33,12 +33,12 @@ if __name__ == "__main__":
 
     parser.add_option("-b", "--base",    help="path to base folder")
     parser.add_option("-p", "--profile", help="profile name to load")
-    parser.add_option("-d", "--deck",    help="default deck")
+    parser.add_option("-d", "--deck",    help="start with deck")
+    parser.add_option("-m", "--model",   help="start with model")
 
     opts, args = parser.parse_args(sys.argv[1:])
     opts.base = unicode(opts.base or "", sys.getfilesystemencoding())
     opts.profile = unicode(opts.profile or "", sys.getfilesystemencoding())
-    opts.deck = unicode(opts.deck or "")
 
     # profile manager
     from aqt.profiles import ProfileManager
@@ -78,6 +78,6 @@ if __name__ == "__main__":
     mw.reset = reset
 
     # start app
-    form = anking.addcards.AddCards(mw, deck=opts.deck)
+    form = anking.addcards.AddCards(mw, deck=opts.deck, model=opts.model)
     app.exec_()
 
