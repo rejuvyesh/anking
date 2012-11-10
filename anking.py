@@ -19,7 +19,6 @@ if __name__ == "__main__":
     import anki
     from anki.hooks import runHook
     from aqt.qt import *
-    from aqt import AnkiApp
 
     # fake gettext because fuck it
     __builtin__.__dict__['_'] = lambda s: s
@@ -57,13 +56,6 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     col = anki.storage.Collection(pm.collectionPath(), lock=False)
     # os.chdir(cwd) # go back to old path, not *.media
-
-    # check if anki is already running and if not, start it
-    # FIXME should be in anking.network
-    anki_app = AnkiApp(sys.argv)
-    if not anki_app.alreadyRunning:
-        print "starting anki..."
-        subprocess.Popen("anki")
 
     # our app
     app = QApplication(sys.argv)

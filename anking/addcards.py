@@ -9,7 +9,7 @@ from anki.hooks import addHook, remHook, runHook
 from anki.sound import clearAudioQueue
 from anki.utils import stripHTML
 from anki.utils import stripHTMLMedia
-from aqt.utils import showWarning, askUser, shortcut, tooltip
+from aqt.utils import showCritical, askUser, shortcut, tooltip
 
 from mock import Mock
 
@@ -106,25 +106,17 @@ class AddCards(QDialog):
         self.editor.currentField = 0
         self.editor.setNote(note)
 
-    def addNote(self, note):
-        data = {
-            "model": note.model["name"],
-            "deck": note.deck,
-            "fields": note.fields,
-            "tags": note.tags,
-        }
-        if note.dupeOrEmpty():
-            # TODO better warning etc.
-            raise Exception("invalid note")
-        anking.network.sendToAnki("addNote", data)
-        self.mw.reset()    
-
     def addCards(self):
         self.editor.saveNow()
         
         # grab data
         note = self.editor.note
 
+        # sanity check
+        if note.dupeOrEmpty():
+            showCritical("Note is a dupe or empty; not adding.")
+            return
+            
         # check for cloze sanity in case of potential cloze-y notes
         if len(note.fields) == 2:
             # find the highest existing cloze
@@ -138,13 +130,22 @@ class AddCards(QDialog):
                 self.editor.changeToModel("Basic")
                 note = self.editor.note
         
-        # add note
-        self.addNote(note)
+        # send data to TCP server in Anki
+        data = {
+            "model": note.model["name"],
+            "deck": note.deck,
+            "fields": note.fields,
+            "tags": note.tags,
+        }
         
-        # stop anything playing
-        clearAudioQueue()
-        self.onReset(keep=True)
-        # self.mw.col.autosave()
+        ret = anking.network.sendToAnki("addNote", data)
+        if ret:
+            self.mw.reset()
+            # stop anything playing
+            clearAudioQueue()
+            self.onReset(keep=True)
+        else:
+            showCritical("Failed to add card. Is Anki ok?")
 
     def keyPressEvent(self, evt):
         "Show answer on RET or register answer."
