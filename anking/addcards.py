@@ -71,6 +71,19 @@ class AddCards(QDialog):
         self.closeButton.setAutoDefault(False)
         bb.addButton(self.closeButton, QDialogButtonBox.RejectRole)
 
+        # shortcuts
+        # switch to tag / fields
+        s = QShortcut(QKeySequence(_("Ctrl+t")), self)
+        s.connect(s, SIGNAL("activated()"), self.onTagFocus)
+        s = QShortcut(QKeySequence(_("Ctrl+f")), self)
+        s.connect(s, SIGNAL("activated()"), self.onFieldFocus)
+
+    def onTagFocus(self):
+        self.editor.tags.setFocus()
+
+    def onFieldFocus(self):
+        self.editor.focus()
+        
     def setupNewNote(self):
         note = anking.notes.Note(self.mw.col, self.modelChooser.currentModel)
         self.editor.setNote(note)

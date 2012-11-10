@@ -437,11 +437,9 @@ class AnkingEditor(object):
         but = b("cloze", self.onClozeInsert, _("Ctrl+Shift+C"),
                 _("Cloze deletion (Ctrl+Shift+C)"), text="[...]")
         but.setFixedWidth(24)
-        s = self.clozeShortcut2 = QShortcut(
-            QKeySequence(_("Alt+C")), self.parentWindow)
+        s = QShortcut(QKeySequence(_("Alt+C")), self.parentWindow)
         s.connect(s, SIGNAL("activated()"), self.onClozeInsert)
-        s = self.clozeShortcut3 = QShortcut(
-            QKeySequence(_("Alt+Shift+C")), self.parentWindow)
+        s = QShortcut(QKeySequence(_("Alt+Shift+C")), self.parentWindow)
         s.connect(s, SIGNAL("activated()"), self.onClozeInsert)
 
         # media
@@ -466,7 +464,7 @@ class AnkingEditor(object):
         but = b("html", self.onHtmlEdit, _("Ctrl+Shift+H"),
                 _("Edit HTML (Ctrl+Shift+H)"), text="HTML")
         but.setFixedWidth(45)
-        
+
         runHook("setupEditorButtons", self)
 
     def enableButtons(self, val=True):
@@ -740,7 +738,7 @@ class AnkingEditor(object):
                 (start, end) = self.currentSelection
                 if start != None and end != None:
                     self.web.eval("setSelection(%d, %d, %d);" % (oldField, start, end))
-        
+                    
     # Foreground colour
     ######################################################################
 
