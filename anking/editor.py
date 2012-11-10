@@ -783,7 +783,7 @@ class AnkingEditor(object):
     def onImageSelection(self):
         path = subprocess.check_output("selection").strip()
         if path:
-            self.addMedia(path)
+            self.addMedia(path, delete=True)
         
     def onAddMedia(self):
         key = (_("Media") +
@@ -795,14 +795,21 @@ class AnkingEditor(object):
         file = getFile(self.widget, _("Add Media"), accept, key, key="media")
         self.parentWindow.activateWindow()
 
-    def addMedia(self, path):
-        html = self._addMedia(path)
+    def addMedia(self, path, delete=False):
+        html = self._addMedia(path, delete)
         self.web.eval("setFormat('inserthtml', %s);" % json.dumps(html))
 
-    def _addMedia(self, path):
+    def _addMedia(self, path, delete=False):
         "Add to media folder and return basename."
         # copy to media folder
         name = self.mw.col.media.addFile(path)
+        # remove original?
+        if delete:
+            if os.path.abspath(name) != os.path.abspath(path):
+                try:
+                    os.unlink(path)
+                except:
+                    pass
         # return a local html link
         ext = name.split(".")[-1].lower()
         if ext in pics:
