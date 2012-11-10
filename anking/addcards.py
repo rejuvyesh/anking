@@ -21,7 +21,7 @@ import anking.network
 import anking.notes
 
 class AddCards(QDialog):
-    def __init__(self, mw):
+    def __init__(self, mw, deck=None):
         QDialog.__init__(self, None, Qt.Window)
         self.mw = mw
         self.form = anking.add_form.Ui_Dialog()
@@ -33,9 +33,12 @@ class AddCards(QDialog):
         self.setupEditor()
         self.setupButtons()
         self.onReset()
-        # self.history = []
         self.forceClose = False
         # restoreGeom(self, "add")
+
+        if deck:
+            self.deckChooser.changeDeck(deck)
+        
         addHook('reset', self.onReset)
         addHook('currentModelChanged', self.onReset)
         self.show()

@@ -59,6 +59,11 @@ class DeckChooser(QHBoxLayout):
         #         self.mw.col.models.current()['did']) or _("Default"))
         pass
 
+    def changeDeck(self, name):
+        did = self.mw.col.decks.id(name)
+        self.deck.setText(self.mw.col.decks.nameOrNone(
+            did) or _("Default"))
+
     def onDeckChange(self):
         from aqt.studydeck import StudyDeck
         current = self.deck.text()
