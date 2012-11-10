@@ -70,20 +70,20 @@ class AddCards(QDialog):
         self.editor.setNote(note)
         return note
 
-    def onReset(self):
+    def onReset(self, keep=False):
         oldNote = self.editor.note
         note = self.setupNewNote()
-        # flds = note.model()['flds']
+        flds = note.model['flds']
         # copy fields from old note
-        # if oldNote:
-        #     for n in range(len(note.fields)):
-        #         try:
-        #             if not keep or flds[n]['sticky']:
-        #                 note.fields[n] = oldNote.fields[n]
-        #             else:
-        #                 note.fields[n] = ""
-        #         except IndexError:
-        #             break
+        if oldNote:
+            for n in range(len(note.fields)):
+                try:
+                    if not keep or flds[n]['sticky']:
+                        note.fields[n] = oldNote.fields[n]
+                    else:
+                        note.fields[n] = ""
+                except IndexError:
+                    break
         self.editor.currentField = 0
         self.editor.setNote(note)
 
@@ -109,7 +109,7 @@ class AddCards(QDialog):
         
         # stop anything playing
         clearAudioQueue()
-        self.onReset()
+        self.onReset(keep=True)
         # self.mw.col.autosave()
 
     def keyPressEvent(self, evt):

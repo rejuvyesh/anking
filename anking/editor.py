@@ -44,15 +44,37 @@ body { margin: 5px; }
 </style><script>
 %s
 
-var currentField = null;
-var changeTimer = null;
-var dropTarget = null;
+var currentField     = null;
+var changeTimer      = null;
+var dropTarget       = null;
 
 String.prototype.format = function() {
     var args = arguments;
     return this.replace(/\{\d+\}/g, function(m){
             return args[m.match(/\d+/)]; });
 };
+
+function saveSelection() {
+    py.run("focus:" + currentField.id.substring(1));
+    var s = window.getSelection();
+    var r = s.getRangeAt(0);
+    py.run("selection:" + r.startOffset + ":" + r.endOffset);
+}
+
+function setSelection(field, start, end) {
+    focusField(field);
+    var s = window.getSelection();
+    var r = s.getRangeAt(0);
+    r.collapse(false);
+    r.setStart(r.startContainer, start);
+    r.setEnd(r.endContainer, end);
+    s.removeAllRanges();
+    s.addRange(r);
+}
+
+function log(msg) {
+    throw new Error("log: "+msg);
+}
 
 function onKey() {
     // esc clears focus, allowing dialog to close
@@ -105,10 +127,12 @@ function onFocus(elem) {
     py.run("focus:" + currentField.id.substring(1));
     // don't adjust cursor on mouse clicks
     if (mouseDown) { return; }
+
     // do this twice so that there's no flicker on newer versions
-    caretToEnd();
+    //caretToEnd();
     // need to do this in a timeout for older qt versions
-    setTimeout(function () { caretToEnd() }, 1);
+    //setTimeout(function () { caretToEnd() }, 1);
+
     // scroll if bottom of element off the screen
     function pos(obj) {
     	var cur = 0;
@@ -317,6 +341,7 @@ class AnkingEditor(object):
         self.note = None
         self._loaded = False
         self.currentField = 0
+        self.currentSelection = (0, 0)
         self.setupOuter()
         self.setupButtons()
         self.setupWeb()
@@ -405,12 +430,12 @@ class AnkingEditor(object):
         but = b("change_colour", self.onChangeCol, _("F8"),
           _("Change colour (F8)"), text=u"▾")
         but.setFixedWidth(12)
-        but = b("cloze", self.onCloze, _("Ctrl+Shift-C"),
+        but = b("cloze", self.onClozeInsert, _("Ctrl+Shift+C"),
                 _("Cloze deletion (Ctrl+Shift+C)"), text="[...]")
         but.setFixedWidth(24)
         s = self.clozeShortcut2 = QShortcut(
             QKeySequence(_("Alt+C")), self.parentWindow)
-        s.connect(s, SIGNAL("activated()"), self.onCloze)
+        s.connect(s, SIGNAL("activated()"), self.onClozeInsert)
         # fixme: better image names
         b("mail-attachment", self.onAddMedia, _("F3"),
           _("Attach pictures/audio/video (F3)"))
@@ -427,7 +452,7 @@ class AnkingEditor(object):
         but = b("html", self.onHtmlEdit, _("Ctrl+Shift+H"),
                 _("Edit HTML (Ctrl+Shift+H)"), text="HTML")
         but.setFixedWidth(45)
-
+        
         runHook("setupEditorButtons", self)
 
     def enableButtons(self, val=True):
@@ -484,6 +509,10 @@ class AnkingEditor(object):
             self._buttons['text_sub'].setChecked(r['sub'])
         elif str.startswith("dupes"):
             self.showDupes()
+        # save current selection
+        elif str.startswith("selection"):
+            (type, start, end) = str.split(":", 2)
+            self.currentSelection = (int(start), int(end))
         else:
             print str
 
@@ -647,25 +676,64 @@ class AnkingEditor(object):
     def removeFormat(self):
         self.web.eval("setFormat('removeFormat');")
 
-    def onCloze(self):
-        # check that the model is set up for cloze deletion
+    def onClozeSwitch(self):
+        # if we are in a cloze deck, switch to Basic, else to Cloze
+        # TODO remember last model?
         if '{{cloze:' not in self.note.model['tmpls'][0]['qfmt']:
             # change to "Cloze" model
-            self.modelChooser.changeToModel("Cloze")
+            self.changeToModel("Cloze")
+        else:
+            self.changeToModel("Basic")
         return
+
+    def onClozeInsert(self):
+        # make sure we are in a "Cloze" model
+        if '{{cloze:' not in self.note.model['tmpls'][0]['qfmt']:
+            self.changeToModel("Cloze")
+            
         # find the highest existing cloze
         highest = 0
         for name, val in self.note.items():
             m = re.findall("\{\{c(\d+)::", val)
             if m:
                 highest = max(highest, sorted([int(x) for x in m])[-1])
-        # reuse last?
+        # reuse last if Alt is pressed
         if not self.mw.app.keyboardModifiers() & Qt.AltModifier:
             highest += 1
         # must start at 1
         highest = max(1, highest)
         self.web.eval("wrap('{{c%d::', '}}');" % highest)
 
+    def changeToModel(self, model):
+        # remember old data
+        self.saveNow()
+        oldNote = self.note
+        oldField = self.currentField
+        self.web.eval("saveSelection();")
+
+        # change model, get new data
+        self.modelChooser.changeToModel(model)
+        note = self.note
+        
+        if oldNote and oldNote != note:
+            # restore some of the note data
+            for n in range(len(note.fields)):
+                try:
+                    note.fields[n] = oldNote.fields[n]
+                except IndexError:
+                    break
+            self.loadNote()
+                    
+            # restore caret etc.
+            if oldField < len(note.fields):
+                self.currentField = oldField
+                (start, end) = self.currentSelection
+                if start != None and end != None:
+                    self.web.eval("setSelection(%d, %d, %d);" % (oldField, start, end))
+
+        
+        
+        
     # Foreground colour
     ######################################################################
 
@@ -767,8 +835,12 @@ class EditorWebView(AnkiWebView):
             self.onStartLine()
         elif self.keyMatches(evt, "Ctrl+E"):
             self.onEndLine()
+        elif self.keyMatches(evt, "Ctrl+K"):
+            self.onDeleteEndOfLine()
         elif self.keyMatches(evt, "Ctrl+C"):
-            self.editor.onCloze()
+            self.editor.onClozeSwitch()
+        elif self.keyMatches(evt, "Ctrl+Shift+C"):
+            self.editor.onClozeInsert()
         else:
             # no special code
             return QWebView.keyPressEvent(self, evt)
@@ -803,6 +875,10 @@ class EditorWebView(AnkiWebView):
 
     def onEndLine(self):
         self.triggerPageAction(QWebPage.MoveToEndOfLine)
+
+    def onDeleteEndOfLine(self):
+        self.triggerPageAction(QWebPage.SelectEndOfLine)
+        self.triggerPageAction(QWebPage.Cut)
 
     def mouseReleaseEvent(self, evt):
         if evt.button() == Qt.MidButton:
