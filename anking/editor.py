@@ -309,8 +309,9 @@ def _filterHTML(html):
 
 # caller is responsible for resetting note on reset
 class AnkingEditor(object):
-    def __init__(self, mw, widget, parentWindow):
+    def __init__(self, mw, modelChooser, widget, parentWindow):
         self.mw = mw
+        self.modelChooser = modelChooser
         self.widget = widget
         self.parentWindow = parentWindow
         self.note = None
@@ -404,11 +405,11 @@ class AnkingEditor(object):
         but = b("change_colour", self.onChangeCol, _("F8"),
           _("Change colour (F8)"), text=u"▾")
         but.setFixedWidth(12)
-        but = b("cloze", self.onCloze, _("Ctrl+C"),
-                _("Cloze deletion (Ctrl+C)"), text="[...]")
+        but = b("cloze", self.onCloze, _("Ctrl+Shift-C"),
+                _("Cloze deletion (Ctrl+Shift+C)"), text="[...]")
         but.setFixedWidth(24)
         s = self.clozeShortcut2 = QShortcut(
-            QKeySequence(_("Ctrl+Shift+C")), self.parentWindow)
+            QKeySequence(_("Alt+C")), self.parentWindow)
         s.connect(s, SIGNAL("activated()"), self.onCloze)
         # fixme: better image names
         b("mail-attachment", self.onAddMedia, _("F3"),
@@ -426,6 +427,7 @@ class AnkingEditor(object):
         but = b("html", self.onHtmlEdit, _("Ctrl+Shift+H"),
                 _("Edit HTML (Ctrl+Shift+H)"), text="HTML")
         but.setFixedWidth(45)
+
         runHook("setupEditorButtons", self)
 
     def enableButtons(self, val=True):
@@ -646,18 +648,11 @@ class AnkingEditor(object):
         self.web.eval("setFormat('removeFormat');")
 
     def onCloze(self):
-        # FIXME make this saner
         # check that the model is set up for cloze deletion
         if '{{cloze:' not in self.note.model['tmpls'][0]['qfmt']:
-            if self.addMode:
-                showInfo(_("""\
-To use this button, please select the Cloze note type. To learn more, \
-please click the help button."""), help="cloze")
-            else:
-                showInfo(_("""\
-To make a cloze deletion on an existing note, you need to change it \
-to a cloze type first, via Edit>Change Note Type."""))
-            return
+            # change to "Cloze" model
+            self.modelChooser.changeToModel("Cloze")
+        return
         # find the highest existing cloze
         highest = 0
         for name, val in self.note.items():
@@ -762,17 +757,34 @@ class EditorWebView(AnkiWebView):
         self.strip = True
 
     def keyPressEvent(self, evt):
-        if evt.matches(QKeySequence.Paste):
+        if self.keyMatches(evt, "Ctrl+Y") or self.keyMatches(evt, "Ctrl+V"):
             self.onPaste()
-            return evt.accept()
-        elif evt.matches(QKeySequence.Copy):
+        elif self.keyMatches(evt, "Alt+W"):
             self.onCopy()
-            return evt.accept()
-        elif evt.matches(QKeySequence.Cut):
+        elif self.keyMatches(evt, "Ctrl+W") or self.keyMatches(evt, "Ctrl+X"):
             self.onCut()
-            return evt.accept()
-        QWebView.keyPressEvent(self, evt)
+        elif self.keyMatches(evt, "Ctrl+A"):
+            self.onStartLine()
+        elif self.keyMatches(evt, "Ctrl+E"):
+            self.onEndLine()
+        elif self.keyMatches(evt, "Ctrl+C"):
+            self.editor.onCloze()
+        else:
+            # no special code
+            return QWebView.keyPressEvent(self, evt)
+            
+        # we parsed it manually
+        return evt.accept()
 
+    def keyMatches(self, event, key):
+        if not isinstance(key, QKeySequence):
+            key = QKeySequence(key)
+
+        # we are lazy, so we just check 1-key sequences
+        if key.count() == 1:
+            return (event.key() | int(event.modifiers())) == key[0]
+        return False
+        
     def onCut(self):
         self.triggerPageAction(QWebPage.Cut)
         self._flagAnkiText()
@@ -785,6 +797,12 @@ class EditorWebView(AnkiWebView):
         mime = self.prepareClip()
         self.triggerPageAction(QWebPage.Paste)
         self.restoreClip(mime)
+
+    def onStartLine(self):
+        self.triggerPageAction(QWebPage.MoveToStartOfLine)
+
+    def onEndLine(self):
+        self.triggerPageAction(QWebPage.MoveToEndOfLine)
 
     def mouseReleaseEvent(self, evt):
         if evt.button() == Qt.MidButton:

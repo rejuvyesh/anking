@@ -42,8 +42,7 @@ class AddCards(QDialog):
         self.setupNewNote()
 
     def setupEditor(self):
-        self.editor = anking.editor.AnkingEditor(
-            self.mw, self.form.fieldsArea, self)
+        self.editor = anking.editor.AnkingEditor(self.mw, self.modelChooser, self.form.fieldsArea, self)
 
     def setupChoosers(self):
         self.modelChooser = anking.modelchooser.ModelChooser(

@@ -78,8 +78,16 @@ class ModelChooser(QHBoxLayout):
         # cdeck = self.deck.decks.current()
         # cdeck['mid'] = m['id']
         # self.deck.decks.save(cdeck)
+        self.modelChanged()
+        
+    def modelChanged(self):
         runHook("currentModelChanged")
         self.mw.reset()
+
+    def changeToModel(self, name):
+        model = self.mw.col.models.byName(name)
+        self.currentModel = model
+        self.modelChanged()
 
     def updateModels(self):
         self.models.setText(self.currentModel['name'])

@@ -54,9 +54,10 @@ class DeckChooser(QHBoxLayout):
         self.widget.hide()
 
     def onModelChange(self):
-        if not self.mw.col.conf.get("addToCur", True):
-            self.deck.setText(self.mw.col.decks.nameOrNone(
-                self.mw.col.models.current()['did']) or _("Default"))
+        # if not self.mw.col.conf.get("addToCur", True):
+        #     self.deck.setText(self.mw.col.decks.nameOrNone(
+        #         self.mw.col.models.current()['did']) or _("Default"))
+        pass
 
     def onDeckChange(self):
         from aqt.studydeck import StudyDeck
