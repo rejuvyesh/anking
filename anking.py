@@ -3,10 +3,8 @@
 # Copyright muflax <mail@muflax.com>, 2012
 # License: GNU GPL 3 <http://www.gnu.org/copyleft/gpl.html>
 
-import os, re, sys, __builtin__, time
-import optparse
-import subprocess
-
+import os, os.path, re, sys, __builtin__, subprocess, optparse, time
+import json, yaml
 from mock import MagicMock
 
 if __name__ == "__main__":
@@ -39,7 +37,7 @@ if __name__ == "__main__":
     opts.base = unicode(opts.base or "", sys.getfilesystemencoding())
     opts.profile = unicode(opts.profile or "", sys.getfilesystemencoding())
 
-    # profile manager
+    # Anki's profile manager
     from aqt.profiles import ProfileManager
     pm = ProfileManager(opts.base, opts.profile)
     pm.ensureProfile()
@@ -60,6 +58,17 @@ if __name__ == "__main__":
     # our app
     app = QApplication(sys.argv)
 
+    # load our preferences
+    config = {
+        # defaults
+    }
+    config_path = os.path.join(opts.base, "anking.rc")
+    force_write = False
+    if os.path.exists(config_path):
+        config.update(yaml.load(file(config_path, 'r')))
+    else:
+        force_write = True
+        
     # fake objects for anki parts so we can just steal its code
     mw = MagicMock()
     mw.col = col
@@ -69,7 +78,17 @@ if __name__ == "__main__":
         runHook("reset")
     mw.reset = reset
 
+    # prepare app
+    anking_form = anking.addcards.AddCards(mw, deck=opts.deck, model=opts.model)
+    # if "geom" in config:
+    #     anking_form.restoreGeometry(config["geom"])
+    
     # start app
-    form = anking.addcards.AddCards(mw, deck=opts.deck, model=opts.model)
     app.exec_()
 
+    # done, write our preferences if they changed
+    new_config = {
+        # "geom": anking_form.saveGeometry()
+    }
+    if config != new_config or force_write:
+        yaml.dump(new_config, file(config_path, 'w+'))

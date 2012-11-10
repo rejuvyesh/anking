@@ -34,7 +34,6 @@ class AddCards(QDialog):
         self.setupButtons()
         self.onReset()
         self.forceClose = False
-        # restoreGeom(self, "add")
 
         # starting parameters
         if deck:
@@ -163,5 +162,4 @@ class AddCards(QDialog):
         self.modelChooser.cleanup()
         self.deckChooser.cleanup()
         self.mw.reset()
-        # saveGeom(self, "add")
         QDialog.reject(self)
