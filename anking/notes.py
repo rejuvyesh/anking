@@ -3,6 +3,7 @@
 # License: GNU GPL 3 <http://www.gnu.org/copyleft/gpl.html>
 
 from anki.utils import fieldChecksum, splitFields
+import re
 
 class Note(object):
     def __init__(self, col, model):
@@ -30,3 +31,14 @@ class Note(object):
     def items(self):
         return [(f['name'], self.fields[ord])
                 for ord, f in sorted(self.fmap.values())]
+
+    def isCloze(self):
+        return '{{cloze:' in self.model['tmpls'][0]['qfmt']
+
+    def highestCloze(self):
+        highest = 0
+        for name, val in self.items():
+            m = re.findall("\{\{c(\d+)::", val)
+            if m:
+                highest = max(highest, sorted([int(x) for x in m])[-1])
+        return highest

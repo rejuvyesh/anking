@@ -106,8 +106,23 @@ class AddCards(QDialog):
     def addCards(self):
         self.editor.saveNow()
         
-        # grab data, add note
+        # grab data
         note = self.editor.note
+
+        # check for cloze sanity in case of potential cloze-y notes
+        if len(note.fields) == 2:
+            # find the highest existing cloze
+            highest = note.highestCloze()    
+            if highest > 0 and not note.isCloze():
+                # clozes used, but wrong model, so switch it to cloze
+                self.editor.changeToModel("Cloze")
+                note = self.editor.note
+            elif note.isCloze() and highest == 0:
+                # no clozes, switch to basic
+                self.editor.changeToModel("Basic")
+                note = self.editor.note
+        
+        # add note
         self.addNote(note)
         
         # stop anything playing

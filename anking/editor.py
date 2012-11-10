@@ -690,7 +690,7 @@ class AnkingEditor(object):
     def onClozeSwitch(self):
         # if we are in a cloze deck, switch to Basic, else to Cloze
         # TODO remember last model?
-        if '{{cloze:' not in self.note.model['tmpls'][0]['qfmt']:
+        if not self.note.isCloze():
             # change to "Cloze" model
             self.changeToModel("Cloze")
         else:
@@ -699,15 +699,11 @@ class AnkingEditor(object):
 
     def onClozeInsert(self):
         # make sure we are in a "Cloze" model
-        if '{{cloze:' not in self.note.model['tmpls'][0]['qfmt']:
+        if not self.note.isCloze():
             self.changeToModel("Cloze")
             
         # find the highest existing cloze
-        highest = 0
-        for name, val in self.note.items():
-            m = re.findall("\{\{c(\d+)::", val)
-            if m:
-                highest = max(highest, sorted([int(x) for x in m])[-1])
+        highest = self.note.highestCloze()    
         # reuse last if Alt is pressed
         if not self.mw.app.keyboardModifiers() & Qt.AltModifier:
             highest += 1
@@ -741,9 +737,6 @@ class AnkingEditor(object):
                 (start, end) = self.currentSelection
                 if start != None and end != None:
                     self.web.eval("setSelection(%d, %d, %d);" % (oldField, start, end))
-
-        
-        
         
     # Foreground colour
     ######################################################################
