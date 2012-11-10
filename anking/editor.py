@@ -412,6 +412,8 @@ class AnkingEditor(object):
         b = self._addButton
         # align to right
         self.iconsBox.addItem(QSpacerItem(20,1, QSizePolicy.Expanding))
+
+        # formating
         b("text_bold", self.toggleBold, _("Ctrl+B"), _("Bold text (Ctrl+B)"),
           check=True)
         b("text_italic", self.toggleItalic, _("Ctrl+I"), _("Italic text (Ctrl+I)"),
@@ -430,16 +432,23 @@ class AnkingEditor(object):
         but = b("change_colour", self.onChangeCol, _("F8"),
           _("Change colour (F8)"), text=u"▾")
         but.setFixedWidth(12)
+
+        # clozes
         but = b("cloze", self.onClozeInsert, _("Ctrl+Shift+C"),
                 _("Cloze deletion (Ctrl+Shift+C)"), text="[...]")
         but.setFixedWidth(24)
         s = self.clozeShortcut2 = QShortcut(
             QKeySequence(_("Alt+C")), self.parentWindow)
         s.connect(s, SIGNAL("activated()"), self.onClozeInsert)
-        # fixme: better image names
+        s = self.clozeShortcut3 = QShortcut(
+            QKeySequence(_("Alt+Shift+C")), self.parentWindow)
+        s.connect(s, SIGNAL("activated()"), self.onClozeInsert)
+
+        # media
         b("mail-attachment", self.onAddMedia, _("F3"),
           _("Attach pictures/audio/video (F3)"))
 
+        # latex
         but = b("latex", self.insertLatex, _("Ctrl+L"),
                 _("LaTeX (Ctrl+L)"), text="LaTeX")
         but.setFixedWidth(50)
@@ -449,6 +458,8 @@ class AnkingEditor(object):
         but = b("latex-math", self.insertLatexMathEnv, _("Ctrl+Shift+M"),
                 _("LaTeX Math Environment (Ctrl+Shift+M)"), text="Math")
         but.setFixedWidth(35)
+
+        # html editing
         but = b("html", self.onHtmlEdit, _("Ctrl+Shift+H"),
                 _("Edit HTML (Ctrl+Shift+H)"), text="HTML")
         but.setFixedWidth(45)
