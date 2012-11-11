@@ -142,6 +142,10 @@ class AddCards(QDialog):
             # stop anything playing
             clearAudioQueue()
             self.onReset(keep=True)
+            # reload collection
+            self.mw.col.db.close()
+            self.mw.col.db = None
+            self.mw.col.reopen()
         else:
             showCritical("Failed to add card. Is Anki ok?")
 
