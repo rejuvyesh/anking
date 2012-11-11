@@ -444,6 +444,10 @@ class AnkingEditor(object):
         s = QShortcut(QKeySequence(_("Alt+Shift+C")), self.parentWindow)
         s.connect(s, SIGNAL("activated()"), self.onClozeInsert)
 
+        # switch to different models
+        s = QShortcut(QKeySequence(_("Ctrl+G")), self.parentWindow)
+        s.connect(s, SIGNAL("activated()"), self.onBasicModel)
+        
         # media
         b("mail-attachment", self.onAddMedia, _("F3"),
           _("Attach pictures/audio/video (F3)"))
@@ -702,6 +706,9 @@ class AnkingEditor(object):
             self.changeToModel("Basic")
         return
 
+    def onBasicModel(self):
+        self.changeToModel("Basic")
+        
     def onClozeInsert(self):
         # make sure we are in a "Cloze" model
         if not self.note.isCloze():
