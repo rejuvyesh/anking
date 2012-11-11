@@ -16,6 +16,8 @@ import aqt
 import anki.js
 from BeautifulSoup import BeautifulSoup
 
+from anking.utils import keyMatches
+
 # fixme: when tab order returns to the webview, the previously focused field
 # is focused, which is not good when the user is tabbing through the dialog
 # fixme: set rtl in div css
@@ -661,6 +663,8 @@ class AnkingEditor(object):
             self.tags.setText(self.note.tags.strip())
 
     def saveTags(self):
+        if not self.note:
+            return
         self.note.tags = self.tags.text()
         runHook("tagsUpdated", self.note)
 
@@ -842,37 +846,28 @@ class EditorWebView(AnkiWebView):
         self.strip = True
 
     def keyPressEvent(self, evt):
-        if self.keyMatches(evt, "Ctrl+Y") or self.keyMatches(evt, "Ctrl+V"):
+        if keyMatches(evt, "Ctrl+Y") or keyMatches(evt, "Ctrl+V"):
             self.onPaste()
-        elif self.keyMatches(evt, "Alt+W"):
+        elif keyMatches(evt, "Alt+W"):
             self.onCopy()
-        elif self.keyMatches(evt, "Ctrl+W") or self.keyMatches(evt, "Ctrl+X"):
+        elif keyMatches(evt, "Ctrl+W") or keyMatches(evt, "Ctrl+X"):
             self.onCut()
-        elif self.keyMatches(evt, "Ctrl+A"):
+        elif keyMatches(evt, "Ctrl+A"):
             self.onStartLine()
-        elif self.keyMatches(evt, "Ctrl+E"):
+        elif keyMatches(evt, "Ctrl+E"):
             self.onEndLine()
-        elif self.keyMatches(evt, "Ctrl+K"):
+        elif keyMatches(evt, "Ctrl+K"):
             self.onDeleteEndOfLine()
-        elif self.keyMatches(evt, "Ctrl+C"):
+        # need those here because Qt is stupid
+        elif keyMatches(evt, "Ctrl+C"):
             self.editor.onClozeSwitch()
-        elif self.keyMatches(evt, "Ctrl+Shift+C"):
+        elif keyMatches(evt, "Ctrl+Shift+C"):
             self.editor.onClozeInsert()
         else:
             # no special code
             return QWebView.keyPressEvent(self, evt)
-            
         # we parsed it manually
         return evt.accept()
-
-    def keyMatches(self, event, key):
-        if not isinstance(key, QKeySequence):
-            key = QKeySequence(key)
-
-        # we are lazy, so we just check 1-key sequences
-        if key.count() == 1:
-            return (event.key() | int(event.modifiers())) == key[0]
-        return False
         
     def onCut(self):
         self.triggerPageAction(QWebPage.Cut)
@@ -1089,3 +1084,22 @@ class EditorWebView(AnkiWebView):
         a = m.addAction(_("Paste"))
         a.connect(a, SIGNAL("activated()"), self.onPaste)
         m.popup(QCursor.pos())
+
+# put emacs keys in tag field too
+def newLineEditKeyPressEvent(self, evt):
+    if keyMatches(evt, "Ctrl+A"):
+        self.setCursorPosition(0)
+    elif keyMatches(evt, "Ctrl+E"):
+        self.setCursorPosition(len(self.text()))
+    elif keyMatches(evt, "Ctrl+K"):
+        p = self.cursorPosition()
+        l = len(self.text())
+        self.setSelection(p, l-p+1)
+        self.cut()
+    else:
+        # nothing special
+        return QLineEdit._keyPressEvent(self, evt)        
+    return evt.accept()
+    
+QLineEdit._keyPressEvent = QLineEdit.keyPressEvent
+QLineEdit.keyPressEvent = newLineEditKeyPressEvent
