@@ -80,15 +80,18 @@ if __name__ == "__main__":
 
     # prepare app
     anking_form = anking.addcards.AddCards(mw, deck=opts.deck, model=opts.model)
-    # if "geom" in config:
-    #     anking_form.restoreGeometry(config["geom"])
+    if "geom" in config:
+        (w, h) = config["geom"]
+        anking_form.resize(w, h)
     
     # start app
+    anking_form.show()    
     app.exec_()
 
     # done, write our preferences if they changed
+    size = [anking_form.size().width(), anking_form.size().height()]
     new_config = {
-        # "geom": anking_form.saveGeometry()
+        "geom": size,
     }
     if config != new_config or force_write:
         yaml.dump(new_config, file(config_path, 'w+'))
