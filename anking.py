@@ -28,32 +28,10 @@ if __name__ == "__main__":
     parser = optparse.OptionParser()
     parser.usage = "%prog [OPTIONS]"
 
-    parser.add_option("-b", "--base",    help="path to base folder")
-    parser.add_option("-p", "--profile", help="profile name to load")
     parser.add_option("-d", "--deck",    help="start with deck")
     parser.add_option("-m", "--model",   help="start with model")
 
     opts, args = parser.parse_args(sys.argv[1:])
-    opts.base = unicode(opts.base or "", sys.getfilesystemencoding())
-    opts.profile = unicode(opts.profile or "", sys.getfilesystemencoding())
-
-    # Anki's profile manager
-    from aqt.profiles import ProfileManager
-    pm = ProfileManager(opts.base, opts.profile)
-    pm.ensureProfile()
-    if not pm.name:
-        # if there's a single profile, load it automatically
-        profs = pm.profiles()
-        try:
-            pm.load(profs[0])
-        except:
-            # password protected
-            pass
-
-    # load anki collection for more convenient reads
-    cwd = os.getcwd()
-    col = anki.storage.Collection(pm.collectionPath(), lock=False)
-    # os.chdir(cwd) # go back to old path, not *.media
 
     # our app
     app = QApplication(sys.argv)
@@ -62,7 +40,7 @@ if __name__ == "__main__":
     config = {
         # defaults
     }
-    config_path = os.path.join(opts.base, "anking.rc")
+    config_path = os.path.expanduser("~/.ankingrc")
     force_write = False
     if os.path.exists(config_path):
         config.update(yaml.load(file(config_path, 'r')))
@@ -71,7 +49,6 @@ if __name__ == "__main__":
         
     # fake objects for anki parts so we can just steal its code
     mw = MagicMock()
-    mw.col = col
     mw.app = app
     def reset():
         # replaces mw.reset()

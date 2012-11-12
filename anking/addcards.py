@@ -17,7 +17,7 @@ import anking.add_form
 import anking.deckchooser
 import anking.editor
 import anking.modelchooser
-import anking.network
+from anking.network import sendToAnki
 import anking.notes
 
 class AddCards(QDialog):
@@ -83,7 +83,7 @@ class AddCards(QDialog):
         self.editor.focus()
         
     def setupNewNote(self):
-        note = anking.notes.Note(self.mw.col, self.modelChooser.currentModel)
+        note = anking.notes.Note(self.modelChooser.currentModel)
         self.editor.setNote(note)
         return note
 
@@ -136,16 +136,12 @@ class AddCards(QDialog):
             "tags": note.tags,
         }
         
-        ret = anking.network.sendToAnki("addNote", data)
-        if ret:
+        ret = sendToAnki("addNote", data)
+        if ret == True:
             self.mw.reset()
             # stop anything playing
             clearAudioQueue()
             self.onReset(keep=True)
-            # reload collection
-            self.mw.col.db.close()
-            self.mw.col.db = None
-            self.mw.col.reopen()
         else:
             showCritical("Failed to add card. Is Anki ok?")
 

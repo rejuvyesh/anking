@@ -8,13 +8,14 @@ from anki.hooks import addHook, remHook, runHook
 from aqt.utils import isMac, shortcut
 import aqt
 
+from anking.network import sendToAnki
+
 class DeckChooser(QHBoxLayout):
 
     def __init__(self, mw, widget, label=True, start=None):
         QHBoxLayout.__init__(self)
         self.widget = widget
         self.mw = mw
-        self.deck = mw.col
         self.label = label
         self.setMargin(0)
         self.setSpacing(8)
@@ -34,13 +35,14 @@ class DeckChooser(QHBoxLayout):
         self.addWidget(self.deck)
         self.connect(self.deck, SIGNAL("clicked()"), self.onDeckChange)
         # starting label
-        # if self.mw.col.conf.get("addToCur", True):
-        col = self.mw.col
-        did = 1 # col.conf['curDeck']
-        if col.decks.isDyn(did):
-            did = 1
-        self.deck.setText(self.mw.col.decks.nameOrNone(
-            did) or _("Default"))
+
+        decks = sendToAnki("decks")
+        deck_name = "Default"
+        for deck in decks:
+            if deck['id'] == "1":
+                deck_name = deck["name"]
+                break
+        self.deck.setText(deck_name)
         # layout
         sizePolicy = QSizePolicy(
             QSizePolicy.Policy(7),
@@ -54,23 +56,21 @@ class DeckChooser(QHBoxLayout):
         self.widget.hide()
 
     def onModelChange(self):
-        # if not self.mw.col.conf.get("addToCur", True):
-        #     self.deck.setText(self.mw.col.decks.nameOrNone(
-        #         self.mw.col.models.current()['did']) or _("Default"))
         pass
 
     def changeToDeck(self, name):
-        did = self.mw.col.decks.id(name)
-        self.deck.setText(self.mw.col.decks.nameOrNone(
-            did) or _("Default"))
+        self.deck.setText(name)
 
     def onDeckChange(self):
         from aqt.studydeck import StudyDeck
         current = self.deck.text()
+        def nameFunc():
+            decks = sendToAnki("decks")
+            return sorted([d["name"] for d in decks])
         ret = StudyDeck(
             self.mw, current=current, accept=_("Choose"),
             title=_("Choose Deck"), help="addingnotes",
-            cancel=False, parent=self.widget)
+            cancel=False, parent=self.widget, names=nameFunc)
         self.deck.setText(ret.name)
 
     def selectedId(self):
@@ -79,7 +79,11 @@ class DeckChooser(QHBoxLayout):
         if not name.strip():
             did = 1
         else:
-            did = self.mw.col.decks.id(name)
+            decks = sendToAnki("decks")
+            for deck in decks:
+                if deck['name'] == name:
+                    did = int(deck["id"])
+                    break
         return did
 
     def cleanup(self):

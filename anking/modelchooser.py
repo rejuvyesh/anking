@@ -8,14 +8,15 @@ from anki.hooks import addHook, remHook, runHook
 from aqt.utils import isMac, shortcut
 import aqt
 
+from anking.network import sendToAnki
+
 class ModelChooser(QHBoxLayout):
 
     def __init__(self, mw, widget, label=True):
         QHBoxLayout.__init__(self)
         self.widget = widget
         self.mw = mw
-        self.deck = mw.col
-        self.currentModel = self.deck.models.current()
+        self.currentModel = sendToAnki("modelByName", {"name": "Basic"})
         self.label = label
         self.setMargin(0)
         self.setSpacing(8)
@@ -65,7 +66,8 @@ class ModelChooser(QHBoxLayout):
         edit = QPushButton(_("Manage"))
         self.connect(edit, SIGNAL("clicked()"), self.onEdit)
         def nameFunc():
-            return sorted(self.deck.models.allNames())
+            models = sendToAnki("models")
+            return sorted([m["name"] for m in models])
         ret = StudyDeck(
             self.mw, names=nameFunc,
             accept=_("Choose"), title=_("Choose Note Type"),
@@ -73,11 +75,8 @@ class ModelChooser(QHBoxLayout):
             buttons=[edit], cancel=False)
         if not ret.name:
             return
-        m = self.deck.models.byName(ret.name)
+        m = sendToAnki("modelByName", {"name": ret.name})
         self.currentModel = m
-        # cdeck = self.deck.decks.current()
-        # cdeck['mid'] = m['id']
-        # self.deck.decks.save(cdeck)
         self.modelChanged()
         
     def modelChanged(self):
@@ -85,7 +84,7 @@ class ModelChooser(QHBoxLayout):
         self.mw.reset()
 
     def changeToModel(self, name):
-        model = self.mw.col.models.byName(name)
+        model = sendToAnki("modelByName", {"name": name})
         self.currentModel = model
         self.modelChanged()
 

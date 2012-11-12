@@ -4,19 +4,20 @@
 # License: GNU GPL 3 <http://www.gnu.org/copyleft/gpl.html>
 
 from aqt.qt import *
-import re, os, sys, urllib2, ctypes, traceback, subprocess
+import re, os, sys, urllib, urllib2, ctypes, traceback, subprocess
 from anki.utils import stripHTML, namedtmp, json
 from anki.sound import play
 from anki.hooks import addHook, remHook, runHook, runFilter
 from aqt.sound import getAudio
 from aqt.webview import AnkiWebView
-from aqt.utils import shortcut, showInfo, showWarning, getBase, getFile, \
+from aqt.utils import shortcut, showInfo, showWarning, getFile, \
     openHelp
 import aqt
 import anki.js
 from BeautifulSoup import BeautifulSoup
 
 from anking.utils import keyMatches
+from anking.network import sendToAnki
 
 # fixme: when tab order returns to the webview, the previously focused field
 # is focused, which is not good when the user is tabbing through the dialog
@@ -561,13 +562,6 @@ class AnkingEditor(object):
 
     def showDupes(self):
         contents = self.note.fields[0]
-        # browser = aqt.dialogs.open("Browser", self.mw)
-        # browser.form.searchEdit.lineEdit().setText(
-        #     "'note:%s' '%s:%s'" % (
-        #         self.note.model['name'],
-        #         self.note.model['flds'][0]['name'],
-        #         contents))
-        # browser.onSearch()
         
     # Write / load note data
     def _loadFinished(self, w):
@@ -581,12 +575,20 @@ class AnkingEditor(object):
         self.currentField = 0
         # change timer
         if self.note:
-            self.web.setHtml(_html % (getBase(self.mw.col), anki.js.jquery),
+            self.web.setHtml(_html % (self.getBase(), anki.js.jquery),
                              loadCB=self._loadFinished)
             self.updateTags()
         else:
             self.hideCompleters()
 
+    def getBase(col):
+        mdir = sendToAnki("mediaDir")
+        prefix = u"file://"
+        base = prefix + unicode(
+            urllib.quote(mdir.encode("utf-8")),
+            "utf-8") + "/"
+        return '<base href="%s">' % base
+        
     def loadNote(self):
         if not self.note:
             return
@@ -596,7 +598,7 @@ class AnkingEditor(object):
             return
         data = []
         for fld, val in self.note.items():
-            data.append((fld, self.mw.col.media.escapeImages(val)))
+            data.append((fld, self.escapeImages(val)))
         self.web.eval("setFields(%s, %d);" % (
             json.dumps(data), field))
         self.web.eval("setFonts(%s);" % (
@@ -604,6 +606,23 @@ class AnkingEditor(object):
         self.checkValid()
         self.widget.show()
         self.web.setFocus()
+
+    def escapeImages(self, string):
+        # Feeding webkit unicode can result in it not finding images, so on
+        # linux/osx we percent escape the image paths as utf8. On Windows the
+        # problem is more complicated - if we percent-escape as utf8 it fixes
+        # some images but breaks others. When filenames are normalized by
+        # dropbox they become unreadable if we escape them.
+        def repl(match):
+            tag = match.group(1)
+            fname = match.group(2)
+            if re.match("(https?|ftp)://", fname):
+                return tag
+            return tag.replace(
+                fname, urllib.quote(fname.encode("utf-8")))
+        regexp = "(?i)(<img[^>]+src=[\"']?([^\"'>]+)[\"']?[^>]*>)"
+        return re.sub(regexp, repl, string)
+
 
     def saveNow(self):
         "Must call this before adding cards, closing dialog, etc."
@@ -661,8 +680,13 @@ class AnkingEditor(object):
         self.outerLayout.addWidget(g)
 
     def updateTags(self):
-        if self.tags.col != self.mw.col:
-            self.tags.setCol(self.mw.col)
+        # FIXME fork tagedit
+        # update list of tags in tagedit
+        if self.tags.type == 0:
+            l = sorted(sendToAnki("tags"))
+        else:
+            l = sorted([d["name"] for d in sendToAnki("decks")])
+        self.tags.model.setStringList(l)
         if not self.tags.text():
             self.tags.setText(self.note.tags.strip())
 
@@ -813,7 +837,7 @@ class AnkingEditor(object):
     def _addMedia(self, path, delete=False):
         "Add to media folder and return basename."
         # copy to media folder
-        name = self.mw.col.media.addFile(path)
+        name = sendToAnki("addFile", {"path": path})
         # remove original?
         if delete:
             if os.path.abspath(name) != os.path.abspath(path):

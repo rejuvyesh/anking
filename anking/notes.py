@@ -4,28 +4,25 @@
 
 from anki.utils import fieldChecksum, splitFields
 import re
+from anking.network import sendToAnki
 
 class Note(object):
-    def __init__(self, col, model):
+    def __init__(self, model):
         self.model = model
         self.deck = None
         self.fields = [""] * len(model["flds"])
         self.tags = ""
-        self.col = col
-        self.fmap = self.col.models.fieldMap(self.model)
+        self.fmap = dict((f['name'], (f['ord'], f)) for f in self.model['flds']) 
 
     def dupeOrEmpty(self):
         val = self.fields[0]
         if not val.strip():
             return 1
         # find any matching csums and compare
-        csum = fieldChecksum(val)
-        mid = self.model["id"]
-        for flds in self.col.db.list(
-            "select flds from notes where csum = ? and id != ? and mid = ?",
-            csum, 0, mid):
-            if splitFields(flds)[0] == self.fields[0]:
-                return 2
+        if sendToAnki("isDupe",
+                      {"field": self.fields[0],
+                       "model": self.model["name"]}):
+            return 2
         return False
 
     def items(self):
