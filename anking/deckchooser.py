@@ -39,7 +39,7 @@ class DeckChooser(QHBoxLayout):
         decks = sendToAnki("decks")
         deck_name = "Default"
         for deck in decks:
-            if deck['id'] == "1":
+            if deck['id'] == 1:
                 deck_name = deck["name"]
                 break
         self.deck.setText(deck_name)
