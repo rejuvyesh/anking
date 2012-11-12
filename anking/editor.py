@@ -663,7 +663,7 @@ class AnkingEditor(object):
     ######################################################################
 
     def setupTags(self):
-        import aqt.tagedit
+        from anking.tagedit import TagEdit
         g = QGroupBox(self.widget)
         g.setFlat(True)
         tb = QGridLayout()
@@ -672,7 +672,7 @@ class AnkingEditor(object):
         # tags
         l = QLabel(_("Tags"))
         tb.addWidget(l, 1, 0)
-        self.tags = aqt.tagedit.TagEdit(self.widget)
+        self.tags = TagEdit(self.widget)
         self.tags.connect(self.tags, SIGNAL("lostFocus"),
                           self.saveTags)
         tb.addWidget(self.tags, 1, 1)
@@ -680,13 +680,8 @@ class AnkingEditor(object):
         self.outerLayout.addWidget(g)
 
     def updateTags(self):
-        # FIXME fork tagedit
         # update list of tags in tagedit
-        if self.tags.type == 0:
-            l = sorted(sendToAnki("tags"))
-        else:
-            l = sorted([d["name"] for d in sendToAnki("decks")])
-        self.tags.model.setStringList(l)
+        self.tags.updateTags()
         if not self.tags.text():
             self.tags.setText(self.note.tags.strip())
 
@@ -1115,22 +1110,3 @@ class EditorWebView(AnkiWebView):
         a = m.addAction(_("Paste"))
         a.connect(a, SIGNAL("activated()"), self.onPaste)
         m.popup(QCursor.pos())
-
-# put emacs keys in tag field too
-def newLineEditKeyPressEvent(self, evt):
-    if keyMatches(evt, "Ctrl+A"):
-        self.setCursorPosition(0)
-    elif keyMatches(evt, "Ctrl+E"):
-        self.setCursorPosition(len(self.text()))
-    elif keyMatches(evt, "Ctrl+K"):
-        p = self.cursorPosition()
-        l = len(self.text())
-        self.setSelection(p, l-p+1)
-        self.cut()
-    else:
-        # nothing special
-        return QLineEdit._keyPressEvent(self, evt)        
-    return evt.accept()
-    
-QLineEdit._keyPressEvent = QLineEdit.keyPressEvent
-QLineEdit.keyPressEvent = newLineEditKeyPressEvent
