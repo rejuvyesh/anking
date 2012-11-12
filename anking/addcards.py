@@ -131,11 +131,11 @@ class AddCards(QDialog):
         # send data to TCP server in Anki
         data = {
             "model": note.model["name"],
-            "deck": note.deck,
+            "deck": self.deckChooser.currentDeck(),
             "fields": note.fields,
             "tags": note.tags,
         }
-        
+
         ret = sendToAnki("addNote", data)
         if ret == True:
             self.mw.reset()

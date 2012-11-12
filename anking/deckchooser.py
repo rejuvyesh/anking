@@ -63,7 +63,7 @@ class DeckChooser(QHBoxLayout):
 
     def onDeckChange(self):
         from aqt.studydeck import StudyDeck
-        current = self.deck.text()
+        current = self.currentDeck()
         def nameFunc():
             decks = sendToAnki("decks")
             return sorted([d["name"] for d in decks])
@@ -73,6 +73,9 @@ class DeckChooser(QHBoxLayout):
             cancel=False, parent=self.widget, names=nameFunc)
         self.deck.setText(ret.name)
 
+    def currentDeck(self):
+        return self.deck.text()
+        
     def selectedId(self):
         # save deck name
         name = self.deck.text()
