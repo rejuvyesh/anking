@@ -5,6 +5,7 @@ Requirements
 
 - the TCP server addon at <https://github.com/muflax/anki-server>
 - `selection` script from <https://github.com/muflax/scripts/>
+- `mock` library for Python
 - all the Python libs that Anki uses, obviously
 
 Installation
