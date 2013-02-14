@@ -16,9 +16,12 @@ Installation
 3. ./build.sh
 4. Put anking.py on a shortcut in your WM somewhere.
 
-TODO
-====
+TODO / Bugs
+===========
 
 - support for more than one cloze type
 - markdown
 - smarter history for tags
+- switching to cloze ignores the y-component of the cursor
+- tags seem to be ignored sometimes?
+- don't forget data when accidentally closed
