@@ -26,7 +26,7 @@ class AddCards(QDialog):
         self.mw = mw
         self.form = anking.add_form.Ui_Dialog()
         self.form.setupUi(self)
-        self.setWindowTitle("Anking Off")
+        self.setWindowTitle("RunAnki")
         self.setMinimumHeight(300)
         self.setMinimumWidth(400)
         self.setupChoosers()
