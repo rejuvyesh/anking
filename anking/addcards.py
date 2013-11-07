@@ -26,7 +26,7 @@ class AddCards(QDialog):
         self.mw = mw
         self.form = anking.add_form.Ui_Dialog()
         self.form.setupUi(self)
-        self.setWindowTitle("Anking Off")
+        self.setWindowTitle("Anking")
         self.setMinimumHeight(300)
         self.setMinimumWidth(400)
         self.setupChoosers()
@@ -40,7 +40,7 @@ class AddCards(QDialog):
             self.deckChooser.changeToDeck(deck)
         if model:
             self.modelChooser.changeToModel(model)
-            
+
         addHook('reset', self.onReset)
         addHook('currentModelChanged', self.onReset)
         self.setupNewNote()
@@ -81,7 +81,7 @@ class AddCards(QDialog):
 
     def onFieldFocus(self):
         self.editor.focus()
-        
+
     def setupNewNote(self):
         note = anking.notes.Note(self.modelChooser.currentModel)
         self.editor.setNote(note)
@@ -106,7 +106,7 @@ class AddCards(QDialog):
 
     def addCards(self):
         self.editor.saveNow()
-        
+
         # grab data
         note = self.editor.note
 
@@ -114,11 +114,11 @@ class AddCards(QDialog):
         if note.dupeOrEmpty():
             showCritical("Note is a dupe or empty; not adding.")
             return
-            
+
         # check for cloze sanity in case of potential cloze-y notes
         if len(note.fields) == 2:
             # find the highest existing cloze
-            highest = note.highestCloze()    
+            highest = note.highestCloze()
             if highest > 0 and not note.isCloze():
                 # clozes used, but wrong model, so switch it to cloze
                 self.editor.changeToModel("Cloze")
@@ -127,7 +127,7 @@ class AddCards(QDialog):
                 # no clozes, switch to basic
                 self.editor.changeToModel("Basic")
                 note = self.editor.note
-        
+
         # send data to TCP server in Anki
         data = {
             "model": note.model["name"],
