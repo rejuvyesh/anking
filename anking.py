@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 # Copyright muflax <mail@muflax.com>, 2012
 # License: GNU GPL 3 <http://www.gnu.org/copyleft/gpl.html>

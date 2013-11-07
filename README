@@ -3,7 +3,7 @@ Better card adding UI for Anki 2. See <http://daily.muflax.com/log/105/> for a r
 Requirements
 ============
 
-- the TCP server addon at <https://github.com/muflax/anki-server>
+- the TCP server addon at <https://github.com/muflax/anki-server>. You should copy that python script into your anki addon folder.
 - `selection` script from <https://github.com/muflax/scripts/>
 - `mock` library for Python
 - all the Python libs that Anki uses, obviously
